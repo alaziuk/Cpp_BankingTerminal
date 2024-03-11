@@ -1,0 +1,8 @@
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/CMakeFiles/BankingApp.dir
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/CMakeFiles/edit_cache.dir
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/CMakeFiles/rebuild_cache.dir
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/lib/CMakeFiles/edit_cache.dir
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/lib/CMakeFiles/rebuild_cache.dir
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/lib/Banking/CMakeFiles/BankingLib.dir
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/lib/Banking/CMakeFiles/edit_cache.dir
+/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/build/lib/Banking/CMakeFiles/rebuild_cache.dir
