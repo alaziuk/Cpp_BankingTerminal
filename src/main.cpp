@@ -2,9 +2,9 @@
 #include <Banking.h>
 
 int main () {
-    Bank Bank;
+    Database database;
+    Bank bank(database);
 
-    Bank.BankingApp();
-
+    bank.App();
     return 0;
 }

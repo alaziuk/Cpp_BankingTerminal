@@ -1,1 +1,1 @@
-/usr/bin/c++ CMakeFiles/BankingApp.dir/src/main.cpp.o -o BankingApp  lib/Banking/libBankingLib.a 
+/usr/bin/c++ -g CMakeFiles/BankingApp.dir/src/main.cpp.o -o BankingApp  lib/Banking/libBankingLib.a 

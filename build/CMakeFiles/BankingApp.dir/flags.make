@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/home/alaziuk/Documents/02_Projekty/00_Portfolio/001_BankingApp/lib/Banking/include
 
-CXX_FLAGS = 
+CXX_FLAGS = -g
 
