@@ -8,14 +8,13 @@
 #include <sstream>
 #include "Banking.h"
 
+const int numberOfTries = NUMBER_OF_TRIES - 1;
 
 /*!
     @brief  Initializes Bank class
 */
 
-Bank::Bank(Database &db) : database(db) {
-
-}
+Bank::Bank(Database &db) : database(db) {}
 
 /*!
     @brief  Initializes Banking App asking user for login or sign in
@@ -25,7 +24,7 @@ void Bank::App() {
     while (running_) {
         chooseInterface();
     }
-}
+} /* App */
 
 /*!
     @brief  Interface mode
@@ -44,11 +43,15 @@ void Bank::chooseInterface() {
             break;
         case exitApp:
             running_ = false;
+            backupData();
             return;
+        case mainMenu:
+            userMenu();
+            break;
         default:
             break;
     } /* switch interface */
-}
+} /* interfaces */
 
 /*!
     @brief  Initial logging in menu
@@ -70,10 +73,10 @@ void Bank::menu() {
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             tries++;
-            if (tries > 3) {break;}
+            if (tries > numberOfTries) {break;}
         } /* while (!input) */
 
-        if (tries > 3) {continue;}
+        if (tries > numberOfTries) {continue;}
 
         switch (choice) {
             case 1:
@@ -90,7 +93,7 @@ void Bank::menu() {
                 break;
         } /* switch (choice) */
     } /* while (true) */
-}
+} /* menu */
 
 /*!
     @brief  Login into banking account
@@ -102,45 +105,113 @@ void Bank::login() {
     int tries = 0;
     std::string username, password;
     while (true) {
-        if (tries > 3) {
+        if (tries > numberOfTries) {
             std::cout << "You have achieved limit for login tries!\n";
             break;
-        }
+        } /* if tries */
         std::cout << "*********************************************\n";
         std::cout << "You have entered logging in page\n";
         std::cout << "Enter usename: ";
         std::cin >> username;
         std::cout << "Enter password: ";
         std::cin >> password;
-        std::cout << "*********************************************\n";
 
         auto iterator = database.users.find(username);
         if (iterator == database.users.end()) {
-            std::cout << "Wrong credentials!";
+            std::cout << "Wrong credentials!\n";
+            std::cout << "*********************************************\n";
             tries++;
             continue;
-        }
-        if (iterator->second != password) {
-            std::cout << "Wrong credentials!";
+        } /* if !username */
+        if (iterator->second.first != password) {
+            std::cout << "Wrong credentials!\n";
+            std::cout << "*********************************************\n";
             tries++;
             continue;
-        }
+        } /* if !password */
         userData_.username = username;
         userData_.password = password;
-        userData_.balance = database.userBalance.find(username)->second;
+        userData_.balance = iterator->second.second;
         std::cout << "Succesfully logged in\n";
+        std::cout << "*********************************************\n";
         break;
-    }
-}
+    } /* while true */
+} /* login */
 
 /*!
     @brief  Singing in into banking account
 */
 
 void Bank::signin() {
-    std::cout << "You have entered signing in page\n";
     currentInterface_ = loginMenu;
-}
+    int tries = 0;
+    std::string username, password;
+    while (true) {
+        if (tries > numberOfTries) {
+            std::cout << "You have achieved limit for signin tries!\n";
+            break;
+        } /* if tries */
+        std::cout << "*********************************************\n";
+        std::cout << "You have entered signing in page\n";
+        std::cout << "Enter usename: ";
+        std::cin >> username;
+        std::cout << "Enter password: ";
+        std::cin >> password;
+        auto iterator = database.users.find(username);
+        if (iterator != database.users.end()) {
+            std::cout << "Username already exists!\n";
+            tries++;
+            continue;
+        }
+        std::pair <std::string, double> tPair(password, 0.0);
+        database.users[username] = tPair;
+        database.saveUsersToFile();
+        break;
+        std::cout << "You have signed in\n";
+    } /* while true */
+    std::cout << "*********************************************\n";
+    
+} /* signin */
+
+/*!
+    @brief Updates database
+*/
+
+void Bank::backupData() {
+    std::ifstream inputFile("users.txt");
+    std::ofstream outputFile("temp.txt");
+
+    std::string line;
+
+    while (getline(inputFile, line)) {
+        std::istringstream iss(line);
+        std::string fileUsername, filePassword;
+        double fileBalance;
+
+        if (iss >> fileUsername >> filePassword >> fileBalance) {
+            if (fileUsername == userData_.username) {
+                outputFile << userData_.username << " " << userData_.password << " " << userData_.balance << std::endl;
+            } else {
+                outputFile << line << std::endl;
+            } /* if =username */
+        } /* if is line */
+    } /* while line */
+
+    inputFile.close();
+    outputFile.close();
+
+    remove("users.txt");
+    rename("temp.txt", "users.txt");
+} /* backupdata */
+
+/*!
+    @brief User menu
+*/
+
+void Bank::userMenu() {
+    Account account(userData_);
+
+} /* userMenu*/
 
 /*!
     @brief Database constructor - loads users from users.txt file
@@ -148,6 +219,19 @@ void Bank::signin() {
 
 Database::Database() {
     loadUsersFromFile();
+}
+
+/*!
+    @brief Saves users to users.txt file
+*/
+
+void Database::saveUsersToFile() {
+    std::ofstream userFile("users.txt");
+
+    for (const auto &user : users) {
+        userFile << user.first << " " << user.second.first << " " << user.second.second << std::endl;
+    }
+    userFile.close();
 }
 
 /*!
@@ -163,9 +247,16 @@ bool Database::loadUsersFromFile() {
         std::string username, password;
         double balance;
         if (iss >> username >> password >> balance) {
-            users[username] = password;
-            userBalance[username] = balance;
-        }
-    }
+            std::pair<std::string, double> tPair(password, balance);
+            users[username] = tPair;
+        } /* if is line */
+    } /* while line */
+    userFile.close();
     return true;
-}
+} /* loadusersfromfile */
+
+/*!
+    @brief Account constructor
+*/
+
+Account::Account(User &user) : userData_(user) {}

@@ -8,11 +8,14 @@
 
 #include <unordered_map>
 
+#define NUMBER_OF_TRIES 3
+
 enum Interface {
     loginMenu,
     accountLogin,
     accountSignin,
-    exitApp
+    exitApp,
+    mainMenu
 };
 
 struct User {
@@ -24,8 +27,8 @@ struct User {
 class Database {
     public:
         Database();
-        std::unordered_map<std::string, std::string> users;
-        std::unordered_map<std::string, double> userBalance;
+        std::unordered_map<std::string, std::pair<std::string, double>> users;
+        void saveUsersToFile();
     private:
         bool loadUsersFromFile();
 };
@@ -40,9 +43,19 @@ class Bank {
         User userData_;
         bool running_ = true;
         Interface currentInterface_ = loginMenu;
+        void backupData();
         void chooseInterface();
         void menu();
         void login();
         void signin();
+        void userMenu();
+};
+
+class Account {
+    public:
+        Account(User &user);
+        void mainMenu();
+    private:
+        User userData_;
 };
 #endif /* Banking */
