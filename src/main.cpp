@@ -3,7 +3,8 @@
 
 int main () {
     Database database;
-    Bank bank(database);
+    Account account;
+    Bank bank(database, account);
 
     bank.App();
     return 0;

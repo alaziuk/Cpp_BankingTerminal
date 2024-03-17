@@ -15,13 +15,29 @@ enum Interface {
     accountLogin,
     accountSignin,
     exitApp,
-    mainMenu
+    mainMenu,
+    moneyDeposit,
+    moneyWithdrawal,
+    moneyTransfer,
+    accountLogout
 };
 
 struct User {
     std::string username;
     std::string password;
     double balance;
+    bool exit = false;
+};
+
+class Account {
+    public:
+        User userData_;
+        std::pair<Interface, User> logout(Interface whereTo);    
+        bool dataSynced_;
+        bool goBack;
+        void deposit();
+        void withdrawal();
+        void transfer();    
 };
 
 class Database {
@@ -36,26 +52,21 @@ class Database {
 
 class Bank {
     public:
-        Bank(Database &db);
+        Bank(Database &db, Account &acc);
         void App();
     private:
+        Account &account;
         Database &database;
         User userData_;
         bool running_ = true;
         Interface currentInterface_ = loginMenu;
-        void backupData();
+        void rewriteData();
         void chooseInterface();
         void menu();
         void login();
         void signin();
         void userMenu();
-};
-
-class Account {
-    public:
-        Account(User &user);
-        void mainMenu();
-    private:
-        User userData_;
+        void transferToDatabase(std::pair <Interface, User>instance);
+        void sync();
 };
 #endif /* Banking */

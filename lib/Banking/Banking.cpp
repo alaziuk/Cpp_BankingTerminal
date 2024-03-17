@@ -14,7 +14,7 @@ const int numberOfTries = NUMBER_OF_TRIES - 1;
     @brief  Initializes Bank class
 */
 
-Bank::Bank(Database &db) : database(db) {}
+Bank::Bank(Database &db, Account &acc) : database(db), account(acc) {}
 
 /*!
     @brief  Initializes Banking App asking user for login or sign in
@@ -43,10 +43,47 @@ void Bank::chooseInterface() {
             break;
         case exitApp:
             running_ = false;
-            backupData();
+            rewriteData();
             return;
         case mainMenu:
             userMenu();
+            break;
+        case moneyDeposit:
+            account.deposit();
+            if (account.goBack) {
+                currentInterface_ = mainMenu;
+                account.goBack = false;
+            }
+            sync();
+            break;
+        case moneyWithdrawal:
+            account.withdrawal();
+            if (account.userData_.balance == 0) {
+                currentInterface_ = mainMenu;
+            }
+            if (account.goBack) {
+                currentInterface_ = mainMenu;
+                account.goBack = false;
+            }
+            sync();
+            break;
+        case moneyTransfer:
+            account.transfer();
+            if (account.userData_.balance == 0) {
+                currentInterface_ = mainMenu;
+            }
+            if (account.goBack) {
+                currentInterface_ = mainMenu;
+                account.goBack = false;
+            }
+            break;
+            sync();
+        case accountLogout:
+            if (userData_.exit){
+                transferToDatabase(account.logout(exitApp));
+            } else {
+                transferToDatabase(account.logout(loginMenu));
+            }
             break;
         default:
             break;
@@ -129,11 +166,12 @@ void Bank::login() {
             tries++;
             continue;
         } /* if !password */
-        userData_.username = username;
-        userData_.password = password;
+        userData_.username = iterator->first;
+        userData_.password = iterator->second.first;
         userData_.balance = iterator->second.second;
         std::cout << "Succesfully logged in\n";
         std::cout << "*********************************************\n";
+        currentInterface_ = mainMenu;
         break;
     } /* while true */
 } /* login */
@@ -168,6 +206,7 @@ void Bank::signin() {
         database.saveUsersToFile();
         break;
         std::cout << "You have signed in\n";
+        currentInterface_ = mainMenu;
     } /* while true */
     std::cout << "*********************************************\n";
     
@@ -177,7 +216,7 @@ void Bank::signin() {
     @brief Updates database
 */
 
-void Bank::backupData() {
+void Bank::rewriteData() {
     std::ifstream inputFile("users.txt");
     std::ofstream outputFile("temp.txt");
 
@@ -209,9 +248,66 @@ void Bank::backupData() {
 */
 
 void Bank::userMenu() {
-    Account account(userData_);
+    if (account.dataSynced_) {
+        account.userData_ = userData_;
+        account.dataSynced_ = true;
+    } /* if data synced */
 
+   while (true) {
+        std::cout << "*********************************************\n";
+        std::cout << "Welcome, " << account.userData_.username << "!\n";
+        std::cout << "Your account balance is " << account.userData_.balance << " zl\n";
+        std::cout << "What would you like to do?\n";
+        std::cout << "1. Deposit\n";
+        std::cout << "2. Withdrawal\n";
+        std::cout << "3. Transfer\n";
+        std::cout << "4. Log out\n";
+        std::cout << "5. Exit\n";
+        std::cout << "*********************************************\n";
+        
+        int choice, tries = 0;
+        while (!(std::cin >> choice)) {
+            std::cout << "That is not an integer!\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            tries++;
+            if (tries > numberOfTries) {break;}
+        } /* while (!input) */
+
+        if (tries > numberOfTries) {continue;}
+
+        switch (choice) {
+            case 1:
+                currentInterface_ = moneyDeposit;
+                return;
+            case 2:
+                currentInterface_ = moneyWithdrawal;
+                return;
+            case 3:
+                currentInterface_ = moneyTransfer;
+                return;
+            case 4:
+                userData_.exit = false;
+                currentInterface_ = accountLogout;
+                return;
+            case 5:
+                userData_.exit = true;
+                currentInterface_ = accountLogout;
+                return;
+            default:
+                std::cout << "Invalid choice, try again\n";
+                break;
+        } /* switch (choice) */
+    } /* while (true) */
 } /* userMenu*/
+
+void Bank::transferToDatabase(std::pair <Interface, User>instance) {
+
+}
+
+void Bank::sync() {
+    userData_ = account.userData_;
+}
 
 /*!
     @brief Database constructor - loads users from users.txt file
@@ -232,7 +328,7 @@ void Database::saveUsersToFile() {
         userFile << user.first << " " << user.second.first << " " << user.second.second << std::endl;
     }
     userFile.close();
-}
+} /* saveUsersToFile */
 
 /*!
     @brief Loads users from users.txt file
@@ -256,7 +352,138 @@ bool Database::loadUsersFromFile() {
 } /* loadusersfromfile */
 
 /*!
-    @brief Account constructor
+    @brief Account logout
 */
 
-Account::Account(User &user) : userData_(user) {}
+std::pair<Interface, User>Account::logout(Interface whereTo) {
+    dataSynced_ = false;
+    User userInstance = userData_; 
+    return std::make_pair(whereTo, userInstance);
+}
+
+/*!
+    @brief Money deposit
+*/
+
+void Account::deposit() {
+    double amount;
+    while (true) {
+        std::cout << "*********************************************\n";
+        std::cout << "Your have entered deposit page\n";
+        std::cout << "What would you like to do?\n";
+        std::cout << "1. Enter amount\n";
+        std::cout << "2. Go back\n";
+        int choice,tries = 0;
+        while (!(std::cin >> choice)) {
+            std::cout << "That is not a integer!\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            tries++;
+            if (tries > numberOfTries) {break;}
+        } /* while (!input) */
+
+        if (tries > numberOfTries) {continue;}
+
+        switch (choice) {
+            case 1:
+                std::cout << "How much would you like to deposit??\n";
+                while (!(std::cin >> amount)) {
+                    std::cout << "That is not a double!\n";
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    tries++;
+                    if (tries > numberOfTries) {break;}
+                } /* while (!input) */
+
+                if (tries > numberOfTries) {continue;}
+                break;
+            case 2:
+                goBack = true;
+                return;
+            default:
+                std::cout << "Invalid choice, try again\n";
+                break;
+        }
+        break;
+    } /* while (true) */
+    userData_.balance += amount;
+    std::cout << "You have deposited " << amount << " to your account\n";
+    std::cout << "*********************************************\n";
+    goBack = true;
+}
+
+/*!
+    @brief Money withdrawal
+*/
+
+void Account::withdrawal() {
+    if (userData_.balance == 0){
+        std::cout << "You don't have any funds to withraw!\n";
+        return;
+    }
+
+    double amount;
+    while (true) {
+        std::cout << "*********************************************\n";
+        std::cout << "Your account balance is " << userData_.balance << " zl\n";
+        std::cout << "What would you like to do?\n";
+        std::cout << "1. Enter amount\n";
+        std::cout << "2. Go back\n";
+        int choice,tries = 0;
+        while (!(std::cin >> choice)) {
+            std::cout << "That is not a integer!\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            tries++;
+            if (tries > numberOfTries) {break;}
+        } /* while (!input) */
+
+        if (tries > numberOfTries) {continue;}
+
+        switch (choice) {
+            case 1:
+                std::cout << "How much would you like to withdraw??\n";
+                while (!(std::cin >> amount)) {
+                    std::cout << "That is not a double!\n";
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    tries++;
+                    if (tries > numberOfTries) {break;}
+                } /* while (!input) */
+
+                if (tries > numberOfTries) {continue;}
+
+                if (amount > userData_.balance) {
+                    std::cout << "You don't have enough balance!\n";
+                    continue;
+                }
+                break;
+            case 2:
+                goBack = true;
+                return;
+            default:
+                std::cout << "Invalid choice, try again\n";
+                break;
+        }
+        break;
+    } /* while (true) */
+    userData_.balance -= amount;
+    std::cout << "You have withrawn " << amount << " from your account\n";
+    std::cout << "*********************************************\n";
+    goBack = true;
+}
+
+/*!
+    @brief Money transfer
+*/
+
+void Account::transfer() {
+    if (userData_.balance == 0){
+        std::cout << "You don't have any funds to withraw!\n";
+        return;
+    }
+
+    while (true) {
+
+    }
+}

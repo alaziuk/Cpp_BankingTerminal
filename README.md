@@ -8,3 +8,5 @@ make -C build/
 
 And finally
 ./build/BankingApp
+
+To use follow the guide in terminal.
