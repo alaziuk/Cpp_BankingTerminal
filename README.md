@@ -1,9 +1,9 @@
 Simple banking app running in terminal
 
 CMake compiled from project directory using:
-cmake -B build/
 
-Then:
+mkdir build
+cmake -B build/
 make -C build/
 
 And finally
