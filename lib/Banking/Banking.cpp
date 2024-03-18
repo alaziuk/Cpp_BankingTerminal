@@ -76,8 +76,8 @@ void Bank::chooseInterface() {
                 currentInterface_ = mainMenu;
                 account.goBack = false;
             }
-            break;
             sync();
+            break;
         case accountLogout:
             if (userData_.exit){
                 transferToDatabase(account.logout(exitApp));
@@ -248,8 +248,9 @@ void Bank::rewriteData() {
 */
 
 void Bank::userMenu() {
-    if (account.dataSynced_) {
+    if (!account.dataSynced_) {
         account.userData_ = userData_;
+        account.users = database.users;
         account.dataSynced_ = true;
     } /* if data synced */
 
@@ -302,11 +303,15 @@ void Bank::userMenu() {
 } /* userMenu*/
 
 void Bank::transferToDatabase(std::pair <Interface, User>instance) {
-
+    currentInterface_ = instance.first;
+    userData_ = instance.second;
+    database.saveUsersToFile();
 }
 
 void Bank::sync() {
     userData_ = account.userData_;
+    database.users = account.users;
+    database.saveUsersToFile();
 }
 
 /*!
@@ -366,7 +371,7 @@ std::pair<Interface, User>Account::logout(Interface whereTo) {
 */
 
 void Account::deposit() {
-    double amount;
+    double amount = 0;
     while (true) {
         std::cout << "*********************************************\n";
         std::cout << "Your have entered deposit page\n";
@@ -381,6 +386,12 @@ void Account::deposit() {
             tries++;
             if (tries > numberOfTries) {break;}
         } /* while (!input) */
+
+        if (amount < 0) {
+            std::cout << "Amount cannot be negative!\n";
+            amount = 0;
+            break;
+        }
 
         if (tries > numberOfTries) {continue;}
 
@@ -422,7 +433,7 @@ void Account::withdrawal() {
         return;
     }
 
-    double amount;
+    double amount = 0;
     while (true) {
         std::cout << "*********************************************\n";
         std::cout << "Your account balance is " << userData_.balance << " zl\n";
@@ -450,6 +461,12 @@ void Account::withdrawal() {
                     tries++;
                     if (tries > numberOfTries) {break;}
                 } /* while (!input) */
+                
+                if (amount < 0) {
+                    std::cout << "Amount cannot be negative!\n";
+                    amount = 0;
+                    break;
+                }
 
                 if (tries > numberOfTries) {continue;}
 
@@ -483,7 +500,94 @@ void Account::transfer() {
         return;
     }
 
+    double amount = 0;
+    std::string user = "None";
     while (true) {
+        std::cout << "*********************************************\n";
+        std::cout << "Your account balance is " << userData_.balance << " zl\n";
+        std::cout << "Current transfer to " << user << '\n';
+        std::cout << "Current amount to transfer to: " << amount << '\n';
+        std::cout << "What would you like to do?\n";
+        std::cout << "1. Enter user to transfer to\n";
+        std::cout << "2. Enter amount\n";
+        std::cout << "3. Proceed with transfer\n";
+        std::cout << "4. Go back\n";
+        int choice,tries = 0;
+        while (!(std::cin >> choice)) {
+            std::cout << "That is not a integer!\n";
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            tries++;
+            if (tries > numberOfTries) {break;}
+        } /* while (!input) */
 
-    }
+        if (tries > numberOfTries) {continue;}
+
+        switch (choice) {
+            case 1: {
+                std::cout << "To whom would you like to transfer money to?\n";
+                while (!(std::cin >> user)) {
+                    std::cout << "That is not a proper string!\n";
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    tries++;
+                    if (tries > numberOfTries) {break;}
+                } /* while (!input) */
+
+                if (tries > numberOfTries) {break;}
+
+                
+                auto iterator = users.find(user);
+                if (iterator == users.end()) {
+                    std::cout << "Username don't exist!\n";
+                    user = "None";
+                    tries++;
+                    break;
+                }
+                break;
+            }
+            case 2: {
+                std::cout << "How much would you like to transfer?\n";
+                while (!(std::cin >> amount)) {
+                    std::cout << "That is not a double!\n";
+                    std::cin.clear();
+                    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                    tries++;
+                    if (tries > numberOfTries) {break;}
+                } /* while (!input) */
+
+                if (amount < 0) {
+                    std::cout << "Amount cannot be negative!\n";
+                    amount = 0;
+                    break;
+                }
+
+                if (tries > numberOfTries) {break;}
+
+                if (amount > userData_.balance) {
+                    std::cout << "You don't have enough balance!\n";
+                    amount = 0;
+                    break;
+                }
+                break;
+            }
+            case 3: {
+                goBack = true;
+                users[userData_.username].second -= amount;
+                userData_.balance -= amount;
+                users[user].second += amount;
+                return;
+            }
+            case 4: {
+                goBack = true;
+                return;
+            }
+            default: {
+                std::cout << "Invalid choice, try again\n";
+                break;
+            }
+        }
+    } /* while (true) */
+
+
 }

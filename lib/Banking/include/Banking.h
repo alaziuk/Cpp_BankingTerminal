@@ -32,6 +32,7 @@ struct User {
 class Account {
     public:
         User userData_;
+        std::unordered_map<std::string, std::pair<std::string, double>> users;
         std::pair<Interface, User> logout(Interface whereTo);    
         bool dataSynced_;
         bool goBack;
